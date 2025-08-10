@@ -8,6 +8,7 @@
 #include "mcp_server.h"
 #include "lamp_controller.h"
 #include "led/single_led.h"
+#include "font_emoji_local.h" 
 
 #include <wifi_station.h>
 #include <esp_log.h>
@@ -62,6 +63,13 @@ static const gc9a01_lcd_init_cmd_t gc9107_lcd_init_cmds[] = {
 
 LV_FONT_DECLARE(font_puhui_16_4);
 LV_FONT_DECLARE(font_awesome_16_4);
+
+extern "C" {
+  // These come from your generated C sources (font_emoji_*.c)
+  const lv_font_t* font_emoji_32_init(void);
+  const lv_font_t* font_emoji_64_init(void);
+  const lv_font_t* font_emoji_128_init(void);  // only if you generated 128px
+}
 
 class CompactWifiBoardLCD : public WifiBoard {
 private:
@@ -128,12 +136,20 @@ private:
                                     {
                                         .text_font = &font_puhui_16_4,
                                         .icon_font = &font_awesome_16_4,
+
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE
-                                        .emoji_font = font_emoji_32_init(),
+    .emoji_font = font_emoji_128_init(),
 #else
-                                        .emoji_font = DISPLAY_HEIGHT >= 240 ? font_emoji_64_init() : font_emoji_32_init(),
+    .emoji_font = (DISPLAY_HEIGHT >= 240 ? font_emoji_128_init()
+                   : (DISPLAY_HEIGHT >= 160 ? font_emoji_64_init()
+                                            : font_emoji_32_init())),
 #endif
                                     });
+/* Dark background + white text */
+lv_obj_t *root = lv_scr_act();  // current screen
+lv_obj_set_style_bg_color(root, lv_color_black(), 0);
+lv_obj_set_style_bg_opa(root, LV_OPA_COVER, 0);
+lv_obj_set_style_text_color(root, lv_color_white(), 0);                                 
     }
 
 
